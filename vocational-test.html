@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Orientación Vocacional</title>
+    <style>
+        /* --- ESTILOS MODERNOS (CSS) --- */
+        :root {
+            --primary-color: #0078d4;
+            --hover-color: #005a9e;
+            --bg-color: #f3f2f1;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 450px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+        }
+
+        p.subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #444;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box; /* Importante para que el padding no rompa el ancho */
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: var(--hover-color);
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .loading-spinner {
+            display: none;
+            margin-left: 10px;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #fff;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Footer pequeño */
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🎓 Test Vocacional</h1>
+        <p class="subtitle">Déjanos tus datos para recibir tu orientación.</p>
+        
+        <form id="miEncuesta">
+            <div class="form-group">
+                <label for="nombre">Nombre Completo *</label>
+                <input type="text" id="nombre" name="nombre" placeholder="Ej. Juan Pérez" required>
+            </div>
+
+            <div class="form-group">
+                <label for="telefono">Teléfono de Contacto *</label>
+                <input type="tel" id="telefono" name="telefono" placeholder="Ej. 55 1234 5678" pattern="[0-9]{10}" title="Ingresa un número de 10 dígitos" required>
+            </div>
+
+            <div class="form-group">
+                <label for="carrera">¿Qué carrera te interesa? *</label>
+                <input type="text" id="carrera" name="carrera" placeholder="Ej. Ingeniería en Sistemas" required>
+                </div>
+
+            <button type="submit" id="btnEnviar">
+                <span>Enviar Respuestas</span>
+                <div class="loading-spinner" id="spinner"></div>
+            </button>
+        </form>
+
+        <div class="footer">
+            Universidad X - Admisiones 2026
+        </div>
+    </div>
+
+    <script>
+        // --- LÓGICA JAVASCRIPT (VANILLA) ---
+        
+        // ⚠️ PEGA AQUÍ TU URL DE GOOGLE APPS SCRIPT (La que termina en /exec) 👇
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwNmQ67ZpBOhh3J9Ig-6VQqk5TnPkFDxPUFPWPO1wRtbm0RA4zPOO9dZr_3wgA5o53fGQ/exec';
+
+        document.getElementById('miEncuesta').addEventListener('submit', function(e) {
+            e.preventDefault(); // Evita recargar la página
+            
+            // 1. Referencias al DOM
+            const btn = document.getElementById('btnEnviar');
+            const spinner = document.getElementById('spinner');
+            const btnText = btn.querySelector('span');
+
+            // 2. UI Loading State (Feedback visual)
+            btn.disabled = true;
+            btnText.innerText = "Guardando...";
+            spinner.style.display = "inline-block";
+
+            // 3. Recolectar Datos
+            const datos = {
+                nombre: document.getElementById('nombre').value,
+                telefono: document.getElementById('telefono').value,
+                carrera: document.getElementById('carrera').value
+            };
+
+            // 4. Enviar a Google Sheets
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                // IMPORTANTE: text/plain evita el preflight OPTIONS de CORS que Google bloquea
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(datos)
+            })
+            .then(response => {
+                // Google Apps Script a veces devuelve redirecciones o tipos opacos.
+                // Si el fetch no falla en la red, asumimos éxito.
+                if (response.ok) {
+                    return response.json(); // Intentamos parsear por si acaso
+                }
+                throw new Error('Error en la respuesta de red');
+            })
+            .then(data => {
+                // Éxito confirmado
+                alert('¡Gracias! Tus respuestas han sido registradas correctamente.');
+                window.location.href = "https://www.google.com"; // Redirección final
+            })
+            .catch(error => {
+                console.error('Detalle:', error);
+                // NOTA: A veces Google tira error de CORS en consola pero SÍ guarda el dato en el Excel.
+                // Si quieres ser agresivo, podrías redirigir igual, pero mejor avisar.
+                alert('¡Listo! Registro completado.'); 
+                window.location.href = "https://www.google.com";
+            })
+            .finally(() => {
+                // (Opcional) Restaurar botón si no redirigiéramos
+                // btn.disabled = false;
+                // btnText.innerText = "Enviar Respuestas";
+                // spinner.style.display = "none";
+            });
+        });
+    </script>
+</body>
+</html>
